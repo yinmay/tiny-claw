@@ -4,6 +4,8 @@
 tiny-claw/
 ├── src/
 │   ├── index.ts              # Entry point (replaces cmd/claw/main.go)
+│   ├── schema/               # Core message and tool schema (Role, Message, ToolCall, ...)
+│   │   └── index.ts
 │   ├── engine/               # MainLoop core implementation
 │   │   └── index.ts
 │   ├── provider/             # LLM provider abstraction and vendor SDK implementations
