@@ -1,0 +1,26 @@
+{
+  "name": "tiny-claw",
+  "version": "1.0.0",
+  "description": "Minimal agent loop with pluggable LLM providers, tools, memory, and Feishu bot integration.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "claw": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.8.0",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
