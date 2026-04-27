@@ -1,29 +1,29 @@
 // src/index.ts
 function main(): void {
-  console.log("🚀 欢迎来到 tiny-claw 引擎启动序列");
+  console.log("🚀 Welcome to the tiny-claw engine startup sequence");
 
-  // TODO: 1. 初始化模型 Provider (大脑)
+  // TODO: 1. Initialize the model Provider (the brain)
   // const provider = new ClaudeProvider(...);
 
-  // TODO: 2. 初始化 Tool Registry (手脚)
+  // TODO: 2. Initialize the Tool Registry (hands and feet)
   // const registry = new ToolRegistry();
   // registry.register(new BashTool());
 
-  // TODO: 3. 初始化上下文管理器 (内存管理器)
+  // TODO: 3. Initialize the Context Manager (memory manager)
   // const ctxManager = new ContextManager(...);
 
-  // TODO: 4. 组装并启动核心 Engine (操作系统心脏)
+  // TODO: 4. Assemble and start the core Engine (the heart of the OS)
   // const engine = new AgentEngine(provider, registry, ctxManager);
 
-  // console.log("开始执行任务...");
+  // console.log("Starting task execution...");
   // try {
-  //   await engine.run("帮我检查一下当前目录下的文件并输出一个 README.md 大纲");
+  //   await engine.run("Inspect files in the current directory and produce a README.md outline");
   // } catch (err) {
-  //   console.error("引擎运行崩溃:", err);
+  //   console.error("Engine crashed:", err);
   //   process.exit(1);
   // }
 
-  console.log("架构蓝图搭建完毕，等待各核心模块注入！");
+  console.log("Architecture blueprint ready — waiting for core modules to be wired in!");
 }
 
 main();
