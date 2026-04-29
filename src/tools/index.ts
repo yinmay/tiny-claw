@@ -8,7 +8,6 @@ import type {
 } from "../schema/index.js";
 
 export interface ExecuteOptions {
-  // Cancellation signal — equivalent to Go's context.Context cancellation.
   signal?: AbortSignal;
 }
 
