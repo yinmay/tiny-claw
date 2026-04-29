@@ -12,20 +12,30 @@ import type { ExecuteOptions, Registry } from "./tools/index.js";
 // ==========================================
 // 1. Mock LLM provider
 // ==========================================
-// Turn 1 -> request a bash call; turn 2 -> emit a final answer.
+// Branches on whether tools were exposed to it:
+//  - no tools  -> emit a plain-text plan (the Thinking phase).
+//  - tools     -> on first action turn request bash, then declare done.
 class MockProvider implements LLMProvider {
-  private turn = 0;
+  private actionTurn = 0;
 
   async generate(
     _messages: Message[],
-    _availableTools: ToolDefinition[],
+    availableTools: ToolDefinition[],
     _options?: GenerateOptions,
   ): Promise<Message> {
-    this.turn++;
-    if (this.turn === 1) {
+    if (availableTools.length === 0) {
       return {
         role: "assistant",
-        content: "Let me see what's in the current directory.",
+        content:
+          "Plan: 1) list files in the workspace via bash `ls -la`; 2) inspect the result; 3) report back.",
+      };
+    }
+
+    this.actionTurn++;
+    if (this.actionTurn === 1) {
+      return {
+        role: "assistant",
+        content: "Executing the plan — running ls -la.",
         tool_calls: [
           {
             id: "call_123",
