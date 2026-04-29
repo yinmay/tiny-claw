@@ -35,6 +35,7 @@ export class AgentEngine {
   async run(userPrompt: string, options: RunOptions = {}): Promise<void> {
     const { signal } = options;
     console.log(`[Engine] Starting, workspace locked to: ${this.workDir}`);
+    console.log(`[Engine] Thinking phase enabled: ${this.enableThinking}`);
 
     // 1. Seed the session context.
     // In production this would be assembled by a dynamic prompt builder
@@ -53,44 +54,75 @@ export class AgentEngine {
 
     let turnCount = 0;
 
-    // 2. The Main Loop — heartbeat (standard ReAct cycle).
+    // 2. The Main Loop — heartbeat (two-phase ReAct cycle).
     while (true) {
       turnCount++;
       console.log(`========== [Turn ${turnCount}] start ==========`);
 
       const availableTools = this.registry.getAvailableTools();
 
-      // Reasoning step.
-      console.log("[Engine] Thinking (Reasoning)...");
-      let responseMsg: Message;
+      // ================================================================
+      // Phase 1: Thinking — strip tools, force the model to plan in text.
+      // ================================================================
+      if (this.enableThinking) {
+        console.log(
+          "[Engine][Phase 1] Tools withheld — entering slow thinking / planning phase...",
+        );
+
+        // Key trick: pass an empty tool list (Go used nil). With no JSON
+        // schemas visible, the model is forced to emit a plain-text plan.
+        let thinkResp: Message;
+        try {
+          thinkResp = await this.provider.generate(contextHistory, [], {
+            signal,
+          });
+        } catch (err) {
+          throw new Error(
+            `thinking-phase generation failed: ${(err as Error).message}`,
+            { cause: err },
+          );
+        }
+
+        if (thinkResp.content !== "") {
+          console.log(`🧠 [Thinking trace]: ${thinkResp.content}`);
+          contextHistory.push(thinkResp);
+        }
+      }
+
+      // ================================================================
+      // Phase 2: Action — restore tools; the model executes its own plan.
+      // ================================================================
+      console.log("[Engine][Phase 2] Tools restored — awaiting model action...");
+
+      let actionResp: Message;
       try {
-        responseMsg = await this.provider.generate(
+        actionResp = await this.provider.generate(
           contextHistory,
           availableTools,
           { signal },
         );
       } catch (err) {
-        throw new Error(`model generation failed: ${(err as Error).message}`, {
-          cause: err,
-        });
+        throw new Error(
+          `action-phase generation failed: ${(err as Error).message}`,
+          { cause: err },
+        );
       }
 
-      // Append the model's full response to history.
-      contextHistory.push(responseMsg);
+      contextHistory.push(actionResp);
 
-      // Plain-text content (reasoning or final answer).
-      if (responseMsg.content !== "") {
-        console.log(`🤖 Model: ${responseMsg.content}`);
+      if (actionResp.content !== "") {
+        console.log(`🤖 [Reply]: ${actionResp.content}`);
       }
 
-      // 3. Exit condition: no tool calls => task complete.
-      const toolCalls = responseMsg.tool_calls ?? [];
+      // ================================================================
+      // Exit + tool execution (unchanged).
+      // ================================================================
+      const toolCalls = actionResp.tool_calls ?? [];
       if (toolCalls.length === 0) {
-        console.log("[Engine] Task complete, exiting loop.");
+        console.log("[Engine] No tool call requested — task complete.");
         break;
       }
 
-      // 4. Action + Observation.
       console.log(`[Engine] Model requested ${toolCalls.length} tool call(s)...`);
 
       for (const toolCall of toolCalls) {
@@ -108,8 +140,8 @@ export class AgentEngine {
           );
         }
 
-        // Wrap the observation as a user message so the model can correlate
-        // it with its tool call. tool_call_id is mandatory for that linkage.
+        // Wrap the observation as a user message; tool_call_id is mandatory
+        // for the model to correlate observation with its earlier call.
         contextHistory.push({
           role: "user",
           content: result.output,
