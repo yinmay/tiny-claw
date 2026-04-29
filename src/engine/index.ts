@@ -22,11 +22,13 @@ export class AgentEngine {
   private readonly provider: LLMProvider;
   private readonly registry: Registry;
   readonly workDir: string;
+  readonly enableThinking: boolean;
 
   constructor(config: AgentEngineConfig) {
     this.provider = config.provider;
     this.registry = config.registry;
     this.workDir = config.workDir;
+    this.enableThinking = config.enableThinking ?? false;
   }
 
   // Run drives the agent's lifecycle until the model stops requesting tools.
