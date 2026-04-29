@@ -1,43 +1,8 @@
 // src/index.ts
 import { AgentEngine } from "./engine/index.js";
 import { OpenAIProvider } from "./provider/openai.js";
-import type {
-  ToolCall,
-  ToolDefinition,
-  ToolResult,
-} from "./schema/index.js";
-import type { ExecuteOptions, Registry } from "./tools/index.js";
-
-// 伪造的工具注册表 (用于测试 Provider 的工具提取能力)
-class MockRegistry implements Registry {
-  getAvailableTools(): ToolDefinition[] {
-    return [
-      {
-        name: "get_weather",
-        description: "获取指定城市的当前天气情况。",
-        input_schema: {
-          type: "object",
-          properties: {
-            city: { type: "string" },
-          },
-          required: ["city"],
-        },
-      },
-    ];
-  }
-
-  async execute(
-    call: ToolCall,
-    _options?: ExecuteOptions,
-  ): Promise<ToolResult> {
-    console.log(`  -> [Mock 工具执行] 获取 ${call.name} 的天气中...`);
-    return {
-      tool_call_id: call.id,
-      output: "API 返回：今天是晴天，气温 25 度。",
-      is_error: false,
-    };
-  }
-}
+import { createReadFileTool } from "./tools/read_file.js";
+import { ToolRegistry } from "./tools/registry.js";
 
 async function main(): Promise<void> {
   if (!process.env.ZHIPU_API_KEY) {
@@ -50,8 +15,9 @@ async function main(): Promise<void> {
   // 这里你可以任意切换 AnthropicProvider.fromZhipuEnv 或 OpenAIProvider.fromZhipuEnv，效果完全一致！
   const provider = OpenAIProvider.fromZhipuEnv("glm-4.5-air");
 
-  // 2. 注入伪造的工具注册表
-  const registry = new MockRegistry();
+  // 2. 接入真实的 Registry，挂载 read_file 工具 (沙箱锁定到 workDir)
+  const registry = new ToolRegistry();
+  registry.register(createReadFileTool(workDir));
 
   // 3. 实例化并运行引擎，关闭慢思考
   const engine = new AgentEngine({
@@ -61,8 +27,8 @@ async function main(): Promise<void> {
     enableThinking: false,
   });
 
-  // 设定测试任务
-  const prompt = "我想去北京跑步，帮我查查天气适合吗？";
+  // 设定测试任务：让模型用 read_file 读取项目入口
+  const prompt = "请读取 package.json，告诉我这个项目叫什么名字、依赖了哪些包。";
 
   await engine.run(prompt);
 }
