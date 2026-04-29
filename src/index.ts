@@ -10,32 +10,32 @@ import type {
 import type { ExecuteOptions, Registry } from "./tools/index.js";
 
 // ==========================================
-// 1. Mock LLM provider
+// Upgraded mock LLM provider
 // ==========================================
-// Branches on whether tools were exposed to it:
-//  - no tools  -> emit a plain-text plan (the Thinking phase).
-//  - tools     -> on first action turn request bash, then declare done.
 class MockProvider implements LLMProvider {
-  private actionTurn = 0;
+  private turn = 0;
 
   async generate(
     _messages: Message[],
     availableTools: ToolDefinition[],
     _options?: GenerateOptions,
   ): Promise<Message> {
+    // Empty tool list => engine is in Phase 1 (Thinking).
     if (availableTools.length === 0) {
       return {
         role: "assistant",
         content:
-          "Plan: 1) list files in the workspace via bash `ls -la`; 2) inspect the result; 3) report back.",
+          "[reasoning] Goal: check files in the workspace. I shouldn't guess — first call the bash tool to run `ls`, see what's there, then decide next steps.",
       };
     }
 
-    this.actionTurn++;
-    if (this.actionTurn === 1) {
+    // Tools available => Phase 2 (Action).
+    this.turn++;
+    if (this.turn === 1) {
+      // First action turn: follow the plan and call the tool precisely.
       return {
         role: "assistant",
-        content: "Executing the plan — running ls -la.",
+        content: "Now executing the step I just planned.",
         tool_calls: [
           {
             id: "call_123",
@@ -46,29 +46,22 @@ class MockProvider implements LLMProvider {
       };
     }
 
+    // Second action turn: summarize and exit.
     return {
       role: "assistant",
-      content: "I see the file list — it includes main.go. Task complete!",
+      content:
+        "Based on the tool output I can see main.go — task complete!",
     };
   }
 }
 
 // ==========================================
-// 2. Mock tool registry
+// Mock tool registry
 // ==========================================
 class MockRegistry implements Registry {
+  // A single fake ToolDefinition is enough for Phase 2 to detect "tools present".
   getAvailableTools(): ToolDefinition[] {
-    return [
-      {
-        name: "bash",
-        description: "Execute a shell command in the workspace.",
-        input_schema: {
-          type: "object",
-          properties: { command: { type: "string" } },
-          required: ["command"],
-        },
-      },
-    ];
+    return [{ name: "bash", description: "", input_schema: null }];
   }
 
   async execute(
@@ -84,15 +77,15 @@ class MockRegistry implements Registry {
 }
 
 // ==========================================
-// 3. Wire up and run
+// Wire up and run
 // ==========================================
 async function main(): Promise<void> {
-  // Use the current working directory as the physical workspace boundary.
   const workDir = process.cwd();
 
   const provider = new MockProvider();
   const registry = new MockRegistry();
 
+  // Instantiate the engine with EnableThinking = true.
   const engine = new AgentEngine({
     provider,
     registry,
