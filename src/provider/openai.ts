@@ -24,7 +24,7 @@ export class OpenAIProvider implements LLMProvider {
   static fromZhipuEnv(model: string): OpenAIProvider {
     const apiKey = process.env.ZHIPU_API_KEY;
     if (!apiKey) {
-      throw new Error("请设置 ZHIPU_API_KEY 环境变量");
+      throw new Error("ZHIPU_API_KEY environment variable is required");
     }
     return new OpenAIProvider(model, apiKey);
   }
