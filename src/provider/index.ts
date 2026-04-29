@@ -4,7 +4,6 @@
 import type { Message, ToolDefinition } from "../schema/index.js";
 
 export interface GenerateOptions {
-  // Cancellation signal — equivalent to Go's context.Context cancellation.
   signal?: AbortSignal;
 }
 
