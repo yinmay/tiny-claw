@@ -48,7 +48,7 @@ export class OpenAIProvider implements LLMProvider {
 
     const choice = completion.choices[0];
     if (!choice) {
-      throw new Error("API 返回了空的 Choices");
+      throw new Error("API returned empty choices");
     }
 
     const result: Message = {
