@@ -58,7 +58,17 @@ class MockProvider implements LLMProvider {
 // ==========================================
 class MockRegistry implements Registry {
   getAvailableTools(): ToolDefinition[] {
-    return [];
+    return [
+      {
+        name: "bash",
+        description: "Execute a shell command in the workspace.",
+        input_schema: {
+          type: "object",
+          properties: { command: { type: "string" } },
+          required: ["command"],
+        },
+      },
+    ];
   }
 
   async execute(
