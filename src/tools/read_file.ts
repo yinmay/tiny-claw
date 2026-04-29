@@ -1,5 +1,5 @@
 // src/tools/read_file.ts
-// 真实的 read_file 工具：限定在 workDir 沙箱内读取文本文件。
+// Real read_file tool: reads text files restricted to the workDir sandbox.
 
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
@@ -19,13 +19,13 @@ export function createReadFileTool(workDir: string): Tool {
     definition: {
       name: "read_file",
       description:
-        "读取工作区内的文本文件。path 可以是相对 workDir 的相对路径，也可以是绝对路径，但都必须落在 workDir 沙箱内。",
+        "Read a text file inside the workspace. `path` may be relative to workDir or absolute, but must resolve inside the workDir sandbox.",
       input_schema: {
         type: "object",
         properties: {
           path: {
             type: "string",
-            description: "要读取的文件路径，相对 workDir 或绝对路径。",
+            description: "File path to read, relative to workDir or absolute.",
           },
         },
         required: ["path"],
@@ -38,12 +38,12 @@ export function createReadFileTool(workDir: string): Tool {
 
       const rel = path.relative(sandboxRoot, absolute);
       if (rel.startsWith("..") || path.isAbsolute(rel)) {
-        throw new Error(`拒绝访问沙箱外路径: ${requested}`);
+        throw new Error(`Refused: path escapes sandbox: ${requested}`);
       }
 
       const buf = await readFile(absolute);
       if (buf.byteLength > MAX_BYTES) {
-        return `${buf.subarray(0, MAX_BYTES).toString("utf8")}\n[...文件过大，已截断到 ${MAX_BYTES} 字节]`;
+        return `${buf.subarray(0, MAX_BYTES).toString("utf8")}\n[...file too large, truncated to ${MAX_BYTES} bytes]`;
       }
       return buf.toString("utf8");
     },
@@ -52,11 +52,11 @@ export function createReadFileTool(workDir: string): Tool {
 
 function parseArgs(raw: unknown): ReadFileArgs {
   if (!raw || typeof raw !== "object") {
-    throw new Error("read_file 参数必须是对象");
+    throw new Error("read_file arguments must be an object");
   }
   const obj = raw as Record<string, unknown>;
   if (typeof obj.path !== "string" || obj.path === "") {
-    throw new Error("read_file 缺少必填参数 path");
+    throw new Error("read_file missing required argument: path");
   }
   return { path: obj.path };
 }
