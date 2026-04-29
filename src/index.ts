@@ -53,12 +53,12 @@ async function main(): Promise<void> {
   // 2. 注入伪造的工具注册表
   const registry = new MockRegistry();
 
-  // 3. 实例化并运行引擎，开启 enableThinking = true (开启慢思考阶段！)
+  // 3. 实例化并运行引擎，关闭慢思考
   const engine = new AgentEngine({
     provider,
     registry,
     workDir,
-    enableThinking: true,
+    enableThinking: false,
   });
 
   // 设定测试任务
