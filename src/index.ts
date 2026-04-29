@@ -6,20 +6,20 @@ import { ToolRegistry } from "./tools/registry.js";
 
 async function main(): Promise<void> {
   if (!process.env.ZHIPU_API_KEY) {
-    throw new Error("请先导出 ZHIPU_API_KEY 环境变量");
+    throw new Error("Please export the ZHIPU_API_KEY environment variable");
   }
 
   const workDir = process.cwd();
 
-  // 1. 初始化真实的 Provider 大脑 (指向智谱 GLM-4.5)
-  // 这里你可以任意切换 AnthropicProvider.fromZhipuEnv 或 OpenAIProvider.fromZhipuEnv，效果完全一致！
+  // 1. Initialize the real provider brain (pointed at Zhipu GLM-4.5).
+  // Swap OpenAIProvider.fromZhipuEnv for AnthropicProvider.fromZhipuEnv freely — same effect.
   const provider = OpenAIProvider.fromZhipuEnv("glm-4.5-air");
 
-  // 2. 接入真实的 Registry，挂载 read_file 工具 (沙箱锁定到 workDir)
+  // 2. Wire up the real registry, mount the read_file tool (sandboxed to workDir).
   const registry = new ToolRegistry();
   registry.register(createReadFileTool(workDir));
 
-  // 3. 实例化并运行引擎，关闭慢思考
+  // 3. Instantiate and run the engine with slow-thinking disabled.
   const engine = new AgentEngine({
     provider,
     registry,
@@ -27,13 +27,13 @@ async function main(): Promise<void> {
     enableThinking: false,
   });
 
-  // 设定测试任务：让模型用 read_file 读取项目入口
-  const prompt = "请读取 package.json，告诉我这个项目叫什么名字、依赖了哪些包。";
+  // Test task: have the model use read_file to read the project entry point.
+  const prompt = "Please read package.json and tell me the project name and which packages it depends on.";
 
   await engine.run(prompt);
 }
 
 main().catch((err) => {
-  console.error("引擎运行崩溃:", err);
+  console.error("Engine crashed:", err);
   process.exit(1);
 });
