@@ -70,7 +70,7 @@ class MockRegistry implements Registry {
   ): Promise<ToolResult> {
     return {
       tool_call_id: call.id,
-      output: "-rw-r--r--  1 user group  234 Oct 24 10:00 main.go\n",
+      output: "-rw-r--r--  1 user group  234 Oct 24 10:00 index.ts\n",
       is_error: false,
     };
   }
