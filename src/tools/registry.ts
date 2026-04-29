@@ -31,7 +31,7 @@ export class ToolRegistry implements Registry {
     if (!tool) {
       return {
         tool_call_id: call.id,
-        output: `未知工具: ${call.name}`,
+        output: `Unknown tool: ${call.name}`,
         is_error: true,
       };
     }
