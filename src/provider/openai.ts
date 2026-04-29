@@ -71,7 +71,7 @@ function toOpenAIMessage(msg: Message): ChatCompletionMessageParam {
       return { role: "system", content: msg.content };
 
     case "user":
-      // 工具结果：作为 role=tool 回填，承接上一轮 tool_call。
+      // Tool result: surface as role=tool, paired with the prior tool_call.
       if (msg.tool_call_id) {
         return {
           role: "tool",
