@@ -50,7 +50,7 @@ class MockProvider implements LLMProvider {
     return {
       role: "assistant",
       content:
-        "Based on the tool output I can see main.go — task complete!",
+        "Based on the tool output I can see index.ts — task complete!",
     };
   }
 }
