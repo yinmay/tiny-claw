@@ -83,7 +83,12 @@ async function main(): Promise<void> {
   const provider = new MockProvider();
   const registry = new MockRegistry();
 
-  const engine = new AgentEngine({ provider, registry, workDir });
+  const engine = new AgentEngine({
+    provider,
+    registry,
+    workDir,
+    enableThinking: true,
+  });
 
   await engine.run("Please check the files in the current directory");
 }
