@@ -69,8 +69,8 @@ export class AgentEngine {
           "[Engine][Phase 1] Tools withheld — entering slow thinking / planning phase...",
         );
 
-        // Key trick: pass an empty tool list (Go used nil). With no JSON
-        // schemas visible, the model is forced to emit a plain-text plan.
+        // Key trick: pass an empty tool list. With no JSON schemas visible,
+        // the model is forced to emit a plain-text plan.
         let thinkResp: Message;
         try {
           thinkResp = await this.provider.generate(contextHistory, [], {
