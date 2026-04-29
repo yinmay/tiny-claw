@@ -91,7 +91,7 @@ function translateMessages(messages: Message[]): {
 
       case "user":
         if (msg.tool_call_id) {
-          // 工具结果：作为 tool_result block 回填到 user 消息。
+          // Tool result: surface as a tool_result block inside a user message.
           anthropicMsgs.push({
             role: "user",
             content: [{
