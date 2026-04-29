@@ -1,91 +1,59 @@
 // src/index.ts
 import { AgentEngine } from "./engine/index.js";
-import type { GenerateOptions, LLMProvider } from "./provider/index.js";
+import { OpenAIProvider } from "./provider/openai.js";
 import type {
-  Message,
   ToolCall,
   ToolDefinition,
   ToolResult,
 } from "./schema/index.js";
 import type { ExecuteOptions, Registry } from "./tools/index.js";
 
-// ==========================================
-// Upgraded mock LLM provider
-// ==========================================
-class MockProvider implements LLMProvider {
-  private turn = 0;
-
-  async generate(
-    _messages: Message[],
-    availableTools: ToolDefinition[],
-    _options?: GenerateOptions,
-  ): Promise<Message> {
-    // Empty tool list => engine is in Phase 1 (Thinking).
-    if (availableTools.length === 0) {
-      return {
-        role: "assistant",
-        content:
-          "[reasoning] Goal: check files in the workspace. I shouldn't guess — first call the bash tool to run `ls`, see what's there, then decide next steps.",
-      };
-    }
-
-    // Tools available => Phase 2 (Action).
-    this.turn++;
-    if (this.turn === 1) {
-      // First action turn: follow the plan and call the tool precisely.
-      return {
-        role: "assistant",
-        content: "Now executing the step I just planned.",
-        tool_calls: [
-          {
-            id: "call_123",
-            name: "bash",
-            arguments: { command: "ls -la" },
-          },
-        ],
-      };
-    }
-
-    // Second action turn: summarize and exit.
-    return {
-      role: "assistant",
-      content:
-        "Based on the tool output I can see index.ts — task complete!",
-    };
-  }
-}
-
-// ==========================================
-// Mock tool registry
-// ==========================================
+// 伪造的工具注册表 (用于测试 Provider 的工具提取能力)
 class MockRegistry implements Registry {
-  // A single fake ToolDefinition is enough for Phase 2 to detect "tools present".
   getAvailableTools(): ToolDefinition[] {
-    return [{ name: "bash", description: "", input_schema: null }];
+    return [
+      {
+        name: "get_weather",
+        description: "获取指定城市的当前天气情况。",
+        input_schema: {
+          type: "object",
+          properties: {
+            city: { type: "string" },
+          },
+          required: ["city"],
+        },
+      },
+    ];
   }
 
   async execute(
     call: ToolCall,
     _options?: ExecuteOptions,
   ): Promise<ToolResult> {
+    console.log(`  -> [Mock 工具执行] 获取 ${call.name} 的天气中...`);
     return {
       tool_call_id: call.id,
-      output: "-rw-r--r--  1 user group  234 Oct 24 10:00 index.ts\n",
+      output: "API 返回：今天是晴天，气温 25 度。",
       is_error: false,
     };
   }
 }
 
-// ==========================================
-// Wire up and run
-// ==========================================
 async function main(): Promise<void> {
+  if (!process.env.ZHIPU_API_KEY) {
+    throw new Error("请先导出 ZHIPU_API_KEY 环境变量");
+  }
+
   const workDir = process.cwd();
 
-  const provider = new MockProvider();
+  // 1. 初始化真实的 Provider 大脑 (指向智谱 GLM-4.5)
+  // 这里你可以任意切换 AnthropicProvider.fromZhipuEnv 或 OpenAIProvider.fromZhipuEnv，效果完全一致！
+  const provider = OpenAIProvider.fromZhipuEnv("glm-4.5-air");
+
+  // 2. 注入伪造的工具注册表
   const registry = new MockRegistry();
 
-  // Instantiate the engine with EnableThinking = true.
+  // 3. 实例化并运行引擎，开启 enableThinking = true (开启慢思考阶段！)
   const engine = new AgentEngine({
     provider,
     registry,
@@ -93,10 +61,13 @@ async function main(): Promise<void> {
     enableThinking: true,
   });
 
-  await engine.run("Please check the files in the current directory");
+  // 设定测试任务
+  const prompt = "我想去北京跑步，帮我查查天气适合吗？";
+
+  await engine.run(prompt);
 }
 
 main().catch((err) => {
-  console.error("Engine crashed:", err);
+  console.error("引擎运行崩溃:", err);
   process.exit(1);
 });
