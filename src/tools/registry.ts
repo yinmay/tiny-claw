@@ -44,7 +44,7 @@ export class ToolRegistry implements Registry {
       const message = err instanceof Error ? err.message : String(err);
       return {
         tool_call_id: call.id,
-        output: `工具执行失败: ${message}`,
+        output: `Tool execution failed: ${message}`,
         is_error: true,
       };
     }
