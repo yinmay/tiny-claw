@@ -151,7 +151,7 @@ function parseToolArguments(args: unknown): Record<string, unknown> {
 }
 
 function toAnthropicTool(def: ToolDefinition): ToolUnion {
-  // ToolInputSchema 强制要求 type === "object"；从 input_schema 中提取 properties / required。
+  // ToolInputSchema requires type === "object"; extract properties / required from input_schema.
   const schema = (def.input_schema ?? {}) as Record<string, unknown>;
   const properties = (schema.properties as Record<string, unknown> | undefined) ?? {};
   const required = Array.isArray(schema.required) ? (schema.required as string[]) : undefined;
