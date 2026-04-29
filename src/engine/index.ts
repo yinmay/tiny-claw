@@ -10,6 +10,8 @@ export interface AgentEngineConfig {
   registry: Registry;
   // Workspace: borrowed from OpenClaw — the agent must have a clear physical boundary.
   workDir: string;
+  // Slow-thinking mode toggle.
+  enableThinking?: boolean;
 }
 
 export interface RunOptions {
