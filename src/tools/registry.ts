@@ -8,22 +8,31 @@ import type {
 } from "../schema/index.js";
 import type { ExecuteOptions, Registry } from "./index.js";
 
-// A registered tool: schema + handler. Handlers raw-throw on failure;
-// the registry catches and converts to ToolResult{ is_error: true }.
-export interface Tool {
-  definition: ToolDefinition;
-  execute(args: unknown, options?: ExecuteOptions): Promise<string>;
+// BaseTool — the interface every concrete tool must implement.
+// Mirrors the Go BaseTool: name(), definition(), execute(rawArgs).
+// Tools receive the raw JSON string emitted by the model and own their own
+// parsing/validation, so the registry stays unaware of per-tool argument shapes.
+export interface BaseTool {
+  // Globally unique tool name — the model invokes the tool by this string.
+  name(): string;
+
+  // Metadata + JSON Schema submitted to the model.
+  definition(): ToolDefinition;
+
+  // Run the tool against raw JSON arguments. Throw on failure;
+  // the registry catches and converts to ToolResult{ is_error: true }.
+  execute(rawArgs: string, options?: ExecuteOptions): Promise<string>;
 }
 
 export class ToolRegistry implements Registry {
-  private readonly tools = new Map<string, Tool>();
+  private readonly tools = new Map<string, BaseTool>();
 
-  register(tool: Tool): void {
-    this.tools.set(tool.definition.name, tool);
+  register(tool: BaseTool): void {
+    this.tools.set(tool.name(), tool);
   }
 
   getAvailableTools(): ToolDefinition[] {
-    return Array.from(this.tools.values(), (t) => t.definition);
+    return Array.from(this.tools.values(), (t) => t.definition());
   }
 
   async execute(call: ToolCall, options?: ExecuteOptions): Promise<ToolResult> {
@@ -37,8 +46,7 @@ export class ToolRegistry implements Registry {
     }
 
     try {
-      const args = parseArguments(call.arguments);
-      const output = await tool.execute(args, options);
+      const output = await tool.execute(serializeArgs(call.arguments), options);
       return { tool_call_id: call.id, output, is_error: false };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -51,12 +59,8 @@ export class ToolRegistry implements Registry {
   }
 }
 
-function parseArguments(raw: unknown): unknown {
-  if (raw == null || raw === "") return {};
-  if (typeof raw !== "string") return raw;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return raw;
-  }
+function serializeArgs(raw: unknown): string {
+  if (raw == null) return "{}";
+  if (typeof raw === "string") return raw || "{}";
+  return JSON.stringify(raw);
 }
