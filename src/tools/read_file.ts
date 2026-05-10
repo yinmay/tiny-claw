@@ -53,7 +53,7 @@ export class ReadFileTool implements BaseTool {
 
     const buf = await readFile(absolute);
     if (buf.byteLength > MAX_BYTES) {
-      return `${buf.subarray(0, MAX_BYTES).toString("utf8")}\n[...file too large, truncated to ${MAX_BYTES} bytes]`;
+      return `${buf.subarray(0, MAX_BYTES).toString("utf8")}\n\n...[content truncated by the system to the first ${MAX_BYTES} bytes]...`;
     }
     return buf.toString("utf8");
   }
