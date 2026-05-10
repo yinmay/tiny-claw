@@ -28,7 +28,7 @@ async function main(): Promise<void> {
   });
 
   // Test task: have the model use read_file to read the project entry point.
-  const prompt = "Please read package.json and tell me the project name and which packages it depends on.";
+  const prompt = "Please read hello.txt and tell me what it says.";
 
   await engine.run(prompt);
 }
