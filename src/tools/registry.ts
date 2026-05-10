@@ -28,7 +28,12 @@ export class ToolRegistry implements Registry {
   private readonly tools = new Map<string, BaseTool>();
 
   register(tool: BaseTool): void {
-    this.tools.set(tool.name(), tool);
+    const name = tool.name();
+    if (this.tools.has(name)) {
+      console.warn(`[Warning] tool '${name}' already registered — overwriting.`);
+    }
+    this.tools.set(name, tool);
+    console.log(`[Registry] mounted tool: ${name}`);
   }
 
   getAvailableTools(): ToolDefinition[] {
@@ -36,27 +41,36 @@ export class ToolRegistry implements Registry {
   }
 
   async execute(call: ToolCall, options?: ExecuteOptions): Promise<ToolResult> {
+    // 1. Routing: a missing tool means the model hallucinated — surface it back.
     const tool = this.tools.get(call.name);
     if (!tool) {
       return {
         tool_call_id: call.id,
-        output: `Unknown tool: ${call.name}`,
+        output: `Error: no tool named '${call.name}' is registered.`,
         is_error: true,
       };
     }
 
+    // 2. Execute: hand the raw JSON byte stream straight to the concrete tool.
     try {
       const output = await tool.execute(serializeArgs(call.arguments), options);
+      // 3. Wrap success.
       return { tool_call_id: call.id, output, is_error: false };
     } catch (err) {
+      // 3. Wrap physical failure so the model can attempt to self-correct.
       const message = err instanceof Error ? err.message : String(err);
       return {
         tool_call_id: call.id,
-        output: `Tool execution failed: ${message}`,
+        output: `Error executing ${call.name}: ${message}`,
         is_error: true,
       };
     }
   }
+}
+
+// Factory mirroring Go's NewRegistry().
+export function newRegistry(): ToolRegistry {
+  return new ToolRegistry();
 }
 
 function serializeArgs(raw: unknown): string {
