@@ -11,7 +11,7 @@ interface ReadFileArgs {
   path: string;
 }
 
-const MAX_BYTES = 256 * 1024;
+const MAX_BYTES = 8000;
 
 export class ReadFileTool implements BaseTool {
   private readonly sandboxRoot: string;
