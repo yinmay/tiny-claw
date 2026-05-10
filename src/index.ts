@@ -28,7 +28,7 @@ async function main(): Promise<void> {
   });
 
   // Test task: have the model use read_file to read the project entry point.
-  const prompt = "Please read hello.txt and tell me what it says.";
+  const prompt = "Please use the tool to read hello.txt in the current workspace, and summarize what it says in one sentence.";
 
   await engine.run(prompt);
 }
